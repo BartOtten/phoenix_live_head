@@ -61,14 +61,21 @@ defmodule Phx.Live.Head do
   @type changes :: [...]
 
   @doc """
-  Reset all attributes of elements matching `query` to their initial value.
+  Reset all `attributes` of elements matching `query` to their initial value.
   """
   @spec reset(Socket.t(), query) :: Socket.t()
   def reset(socket, query),
     do: push_event(socket, "hd", Map.put(%{}, maybe_min_query(query), "i"))
 
   @doc """
-  Pushes `action` to apply on `attr` of elements matching `query`. See [Actions](#module-actions) for available actions.
+  Reset an `attribute` of elements matching `query` to it's initial value
+  """
+  @spec reset(Socket.t(), query, attr) :: Socket.t()
+  def reset(socket, query, attr),
+    do: push(socket, query, :initial, attr, "i")
+
+  @doc """
+  Pushes `action` to apply on `attribute` of elements matching `query`. See [Actions](#module-actions) for available actions.
   """
   @spec push(Socket.t(), query, action, attr, value) :: Socket.t()
   def push(socket, query, action, attr, value) do
