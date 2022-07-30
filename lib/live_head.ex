@@ -63,7 +63,7 @@ defmodule Phx.Live.Head do
   @doc """
   Reset all attributes of elements matching `query` to their initial value.
   """
-  @spec reset(Phoenix.LiveView.Socket.t(), query) :: Socket.t()
+  @spec reset(Socket.t(), query) :: Socket.t()
   def reset(socket, query),
     do: push_event(socket, "hd", Map.put(%{}, maybe_min_query(query), "i"))
 
