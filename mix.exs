@@ -6,7 +6,7 @@ defmodule Phx.Live.Head.MixProject do
       name: "Phoenix Live Head",
       description: "HTML Head manipulation for Phoenix Live Views",
       app: :phoenix_live_head,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       package: package(),
@@ -26,11 +26,11 @@ defmodule Phx.Live.Head.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:phoenix, "~> 1.6.0"},
-      {:phoenix_html, "~> 3.1"},
-      {:phoenix_live_view, "~> 0.17.0"},
-      {:esbuild, "~> 0.2", only: :dev},
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
+      {:phoenix, ">= 1.6.0"},
+      {:phoenix_html, ">= 3.1"},
+      {:phoenix_live_view, ">= 0.17.0"},
+      {:esbuild, ">= 0.2", only: :dev},
+      {:ex_doc, ">= 0.27", only: :dev, runtime: false}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
