@@ -20,7 +20,7 @@ by adding `phoenix_live_head` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:phoenix_live_head, "~> 0.1.0"}
+    {:phoenix_live_head, "~> 0.1.1"}
   ]
 end
 ```
