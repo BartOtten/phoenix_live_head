@@ -25,6 +25,17 @@ defmodule Phx.Live.HeadTest do
     assert [["hd", %{"link[other]" => [[:d, _, _], [:s, _, _]]}]] = result
   end
 
+  test "Attribute minimizing" do
+    result =
+      %Socket{}
+      |> push("link[other]", :set, "href", "favicon/test.png")
+      |> push("link[other]", :set, "class", ".class-of-99")
+      |> push("link[other]", :set, "id", "#privacy")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [["hd", %{"link[other]" => [[_, "h", _], [_, "c", _], [_, "id", _]]}]] = result
+  end
+
   test "Events are merged" do
     result =
       %Socket{}
@@ -57,7 +68,7 @@ defmodule Phx.Live.HeadTest do
 
     assert [
              ["other", %{foo: :bar}],
-             _hed_events,
+             _head_events,
              ["p", %{bar: :baz}]
            ] = result
   end
@@ -110,56 +121,93 @@ defmodule Phx.Live.HeadTest do
   end
 
   test "Reset/1 removes pre-existing actions for the query" do
-    result =
+    socket =
       %Socket{}
-      |> reset("a")
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
       |> push("a", :set, "class", ".class-of-99")
       |> push("a", :set, "id", "#privacy")
       |> push("p", :set, "class", ".paragraph")
       |> push_event("other", %{foo: :bar})
       |> reset("a")
-      |> push("a", :set, "id", "#privacy")
-      |> Phoenix.LiveView.Utils.get_push_events()
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
 
     assert [
-             ["hd", %{"a" => ["i", [:s, "id", "#privacy"]], "p" => [[:s, "c", ".paragraph"]]}],
-             ["other", %{foo: :bar}]
+             ["other", %{foo: :bar}],
+             [
+               "hd",
+               %{
+                 "a" => ["i"],
+                 "p" => [[:s, "c", ".paragraph"]]
+               }
+             ]
+           ] = result
+
+    socket =
+      socket
+      |> push("a", :set, "href", "http:///www.updated.url/watch?none")
+      |> push("a", :set, "class", ".class-of-99")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+
+    assert [
+             ["other", %{foo: :bar}],
+             [
+               "hd",
+               %{
+                 "a" => [
+                   "i",
+                   [:s, "h", "http:///www.updated.url/watch?none"],
+                   [:s, "c", ".class-of-99"]
+                 ],
+                 "p" => [[:s, "c", ".paragraph"]]
+               }
+             ]
            ] = result
   end
 
   test "Reset/2 removes pre-existing actions for the query + attribute" do
-    result =
+    socket =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
       |> push("a", :set, "class", ".class-of-99")
       |> push_event("other", %{foo: :bar})
       |> reset("a", "href")
-      |> push("a", :set, "href", "http:///www.updated.url/watch?none")
-      |> Phoenix.LiveView.Utils.get_push_events()
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
 
     assert [
+             ["other", %{foo: :bar}],
              [
                "hd",
                %{
                  "a" => [
                    [:s, "c", ".class-of-99"],
-                   [:s, "h", "http:///www.updated.url/watch?none"]
+                   [:i, "h", "i"]
                  ]
                }
-             ],
-             ["other", %{foo: :bar}]
+             ]
            ] = result
-  end
 
-  test "Attribute minimizing" do
-    result =
-      %Socket{}
-      |> push("link[other]", :set, "href", "favicon/test.png")
-      |> push("link[other]", :set, "class", ".class-of-99")
-      |> push("link[other]", :set, "id", "#privacy")
-      |> Phoenix.LiveView.Utils.get_push_events()
+    # href reset is overriden by set
+    socket =
+      socket
+      |> push("a", :set, "href", "http:///www.updated.url/watch?none")
+      |> push("a", :set, "class", ".class-of-67")
 
-    assert [["hd", %{"link[other]" => [[_, "h", _], [_, "c", _], [_, "id", _]]}]] = result
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+
+    assert [
+             ["other", %{foo: :bar}],
+             [
+               "hd",
+               %{
+                 "a" => [
+                   [:s, "h", "http:///www.updated.url/watch?none"],
+                   [:s, "c", ".class-of-67"]
+                 ]
+               }
+             ]
+           ] = result
   end
 end
