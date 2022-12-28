@@ -10,7 +10,7 @@ window.addEventListener("phx:hd", (event: Event) => {
     type detail = { [key: query]: change[] | reset}
 
     // CONSTANTS
-    const CLASS_ATTR: string = "class-name";
+    const CLASS_ATTR: string = "class";
     const ATTR: { [key: string]: string } = { "c": CLASS_ATTR, "h": "href" }
     const QUERY: { [key: string]: string } = { "f": "link[rel*='icon']" }
 
@@ -66,7 +66,10 @@ window.addEventListener("phx:hd", (event: Event) => {
         changes.forEach(function (change: change) {
             const [action, attr_input, value] = change;
 
-            if(action=== "i"){ resetElement(el); return }
+            if(action === "i" && typeof(attr_input) === "undefined"){
+                resetElement(el);
+                return
+            }
 
             const attr = ATTR[attr_input] || attr_input
 
