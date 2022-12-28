@@ -1,14 +1,13 @@
 window.addEventListener("phx:hd", (event: Event) => {
-    // JUMP TO MAIN
-    main(event);
 
     // TYPES
     type action = "s" | "a" | "r" | "t" | "i" | "d";
     type attr = string;
     type value = string;
     type query = string;
-    type change = [action, attr, value]
-    type detail = { [key: query]: change[] | "i" }
+    type reset = "i"
+    type change = [action, attr, value] | reset
+    type detail = { [key: query]: change[] | reset}
 
     // CONSTANTS
     const CLASS_ATTR: string = "class-name";
@@ -64,9 +63,11 @@ window.addEventListener("phx:hd", (event: Event) => {
     }
 
     function applyToElement(el: HTMLElement, changes: change[]) {
-
         changes.forEach(function (change: change) {
             const [action, attr_input, value] = change;
+
+            if(action=== "i"){ resetElement(el); return }
+
             const attr = ATTR[attr_input] || attr_input
 
             if (!isPreserved(el, attr)) { preserveAttrValue(el, attr) }
@@ -93,8 +94,6 @@ window.addEventListener("phx:hd", (event: Event) => {
         );
     };
 
-
-    // MAIN
     function main(event: Event): void {
         const detail: detail = (event as CustomEvent).detail;
         for (const [query_input, changes] of Object.entries(detail)) {
@@ -106,4 +105,6 @@ window.addEventListener("phx:hd", (event: Event) => {
             })
         }
     }
+
+    main(event);
 });
