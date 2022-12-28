@@ -54,25 +54,30 @@ defmodule Phx.Live.Head do
   import Phoenix.LiveView, only: [push_event: 3]
   alias Phoenix.LiveView.Socket
 
+  @initial "i"
+
   @type action :: :add | :dynamic | :initial | :remove | :set | :toggle
-  @type query :: binary
-  @type attr :: binary
-  @type value :: binary
-  @type changes :: [...]
+  @type query :: String.t()
+  @type attr :: String.t()
+  @type value :: String.t()
+  @typep reset :: String.t()
+  @typep change :: [...] | reset
+  @typep details :: map()
 
   @doc """
   Reset all `attributes` of elements matching `query` to their initial value.
   """
   @spec reset(Socket.t(), query) :: Socket.t()
-  def reset(socket, query),
-    do: push_event(socket, "hd", Map.put(%{}, maybe_min_query(query), "i"))
+  def reset(socket, query) do
+    query = maybe_min_query(query)
+    put_or_merge_head_events(socket, query, @initial)
+  end
 
   @doc """
   Reset an `attribute` of elements matching `query` to it's initial value
   """
   @spec reset(Socket.t(), query, attr) :: Socket.t()
-  def reset(socket, query, attr),
-    do: push(socket, query, :initial, attr, "i")
+  def reset(socket, query, attr), do: push(socket, query, :initial, attr, @initial)
 
   @doc """
   Pushes `action` to apply on `attribute` of elements matching `query`. See [Actions](#module-actions) for available actions.
@@ -105,20 +110,45 @@ defmodule Phx.Live.Head do
   defp min_action(:toggle), do: :t
   defp min_action(:initial), do: :i
 
-  @spec put_or_merge_head_events(Socket.t(), query, changes) :: Socket.t()
-  defp put_or_merge_head_events(%Socket{} = socket, query, changes)
-       when is_binary(query) and is_list(changes) do
-    # use an accumulator to signal if head events are merged so
+  @spec reject_previous_attr_changes(previous_changes :: [change], attr) :: [change]
+  defp reject_previous_attr_changes(previous_changes, attr) do
+    Enum.reject(previous_changes, fn
+      [_, attr2, _] -> attr2 == attr
+      @initial -> false
+    end)
+  end
+
+  @spec put_query_change(details, query, change) :: [change]
+  defp put_query_change(details, query, change) do
+    ["hd", Map.put(details, query, [change])]
+  end
+
+  @spec merge_query_change(details, query, change) :: [change]
+  defp merge_query_change(details, query, change) do
+    [_action, attr, _value] = change
+
+    previous_changes =
+      details[query]
+      |> reject_previous_attr_changes(attr)
+
+    combined_changes = previous_changes ++ [change]
+    ["hd", Map.put(details, query, combined_changes)]
+  end
+
+  @spec put_or_merge_head_events(Socket.t(), query, change) :: Socket.t()
+  defp put_or_merge_head_events(%Socket{} = socket, query, change)
+       when is_binary(query) and (is_list(change) or change === @initial) do
+    # use an accumulator to signal if head events were merged so
     # the list only has to be traversed once.
     {events, merged?} =
       socket
       |> Phoenix.LiveView.Utils.get_push_events()
       |> Enum.map_reduce(false, fn
-        ["hd", details], _ when is_map_key(details, query) ->
-          {["hd", Map.put(details, query, [changes | details[query]])], true}
+        ["hd", details], _ when change == @initial or not is_map_key(details, query) ->
+          {put_query_change(details, query, change), true}
 
-        ["hd", details], _ ->
-          {["hd", Map.put(details, query, [changes])], true}
+        ["hd", details], _ when is_map_key(details, query) ->
+          {merge_query_change(details, query, change), true}
 
         other, acc ->
           {other, acc}
@@ -128,12 +158,9 @@ defmodule Phx.Live.Head do
     #  head events or we replace the whole list of events with our mapped variant
     #  including merged head events
     if merged? do
-      socket
-      |> Map.from_struct()
-      |> put_in([:private, :__changed__, :push_events], events)
-      |> then(&struct(Socket, &1))
+      put_in(socket.private.__changed__.push_events, events)
     else
-      push_event(socket, "hd", Map.put(%{}, query, [changes]))
+      push_event(socket, "hd", Map.put(%{}, query, [change]))
     end
   end
 end

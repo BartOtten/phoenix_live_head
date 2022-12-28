@@ -5,37 +5,6 @@ defmodule Phx.Live.HeadTest do
   alias Phoenix.LiveView.Socket
   import Phx.Live.Head
 
-  test "Events are merged" do
-    result =
-      %Socket{}
-      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
-      |> push("a", :set, "id", "#privacy")
-      |> push("p", :set, "class", ".paragraph")
-      |> Phoenix.LiveView.Utils.get_push_events()
-
-    assert [
-             [
-               "hd",
-               %{
-                 "a" => [[_, _, _] = _event3, [_, _, _] = _event2, [_, _, _] = _event1],
-                 "p" => [[_, _, _]]
-               }
-             ]
-           ] = result
-  end
-
-  test "Attribute minimizing" do
-    result =
-      %Socket{}
-      |> push("link[other]", :set, "href", "favicon/test.png")
-      |> push("link[other]", :set, "class", ".class-of-99")
-      |> push("link[other]", :set, "id", "#privacy")
-      |> Phoenix.LiveView.Utils.get_push_events()
-
-    assert [["hd", %{"link[other]" => [[_, "id", _], [_, "c", _], [_, "h", _]]}]] = result
-  end
-
   test "Query minimizing" do
     result =
       %Socket{}
@@ -53,10 +22,30 @@ defmodule Phx.Live.HeadTest do
       |> push("link[other]", :set, "class", ".class-of-99")
       |> Phoenix.LiveView.Utils.get_push_events()
 
-    assert [["hd", %{"link[other]" => [[:s, _, _], [:d, _, _]]}]] = result
+    assert [["hd", %{"link[other]" => [[:d, _, _], [:s, _, _]]}]] = result
   end
 
-  test "Other events are not touched" do
+  test "Events are merged" do
+    result =
+      %Socket{}
+      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "id", "#privacy")
+      |> push("p", :set, "class", ".paragraph")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [
+             [
+               "hd",
+               %{
+                 "a" => [[_, _, _] = _event1, [_, _, _] = _event2, [_, _, _] = _event3],
+                 "p" => [[_, _, _]]
+               }
+             ]
+           ] = result
+  end
+
+  test "Other events are left untouched" do
     result =
       %Socket{}
       |> push_event("other", %{foo: :bar})
@@ -71,5 +60,106 @@ defmodule Phx.Live.HeadTest do
              _hed_events,
              ["p", %{bar: :baz}]
            ] = result
+  end
+
+  test "Actions per element preserve order" do
+    result =
+      %Socket{}
+      |> reset("a")
+      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "id", "#privacy")
+      |> push("p", :set, "class", ".paragraph")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [
+             [
+               "hd",
+               %{
+                 "a" => [
+                   "i",
+                   [_, "h", _] = _event1,
+                   [_, "c", _] = _event2,
+                   [_, "id", _] = _event3
+                 ],
+                 "p" => [[_, "c", _]]
+               }
+             ]
+           ] = result
+  end
+
+  test "There are no duplicate sets for an attribute" do
+    result =
+      %Socket{}
+      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "href", "http:///www.updated.url/watch?none")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [
+             [
+               "hd",
+               %{
+                 "a" => [
+                   [:s, "c", ".class-of-99"],
+                   [:s, "h", "http:///www.updated.url/watch?none"]
+                 ]
+               }
+             ]
+           ] = result
+  end
+
+  test "Reset/1 removes pre-existing actions for the query" do
+    result =
+      %Socket{}
+      |> reset("a")
+      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "id", "#privacy")
+      |> push("p", :set, "class", ".paragraph")
+      |> push_event("other", %{foo: :bar})
+      |> reset("a")
+      |> push("a", :set, "id", "#privacy")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [
+             ["hd", %{"a" => ["i", [:s, "id", "#privacy"]], "p" => [[:s, "c", ".paragraph"]]}],
+             ["other", %{foo: :bar}]
+           ] = result
+  end
+
+  test "Reset/2 removes pre-existing actions for the query + attribute" do
+    result =
+      %Socket{}
+      |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      |> push("a", :set, "class", ".class-of-99")
+      |> push_event("other", %{foo: :bar})
+      |> reset("a", "href")
+      |> push("a", :set, "href", "http:///www.updated.url/watch?none")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [
+             [
+               "hd",
+               %{
+                 "a" => [
+                   [:s, "c", ".class-of-99"],
+                   [:s, "h", "http:///www.updated.url/watch?none"]
+                 ]
+               }
+             ],
+             ["other", %{foo: :bar}]
+           ] = result
+  end
+
+  test "Attribute minimizing" do
+    result =
+      %Socket{}
+      |> push("link[other]", :set, "href", "favicon/test.png")
+      |> push("link[other]", :set, "class", ".class-of-99")
+      |> push("link[other]", :set, "id", "#privacy")
+      |> Phoenix.LiveView.Utils.get_push_events()
+
+    assert [["hd", %{"link[other]" => [[_, "h", _], [_, "c", _], [_, "id", _]]}]] = result
   end
 end
