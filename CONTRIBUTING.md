@@ -13,12 +13,12 @@ Use the issues tracker for:
 Please **do not** use the issue tracker for personal support requests nor feature requests. 
 Feature and support requests should be created on the Elixir forum and be tagged with at least `phoenix_live_head`
 
-* [Support Request](https://elixirforum.com/tags/c/questions-help/53/phoenix_live_head)
-* [Feature Request](https://elixirforum.com/t/phoenix-localized-routes-localize-your-phoenix-website-with-multilingual-urls/48486)
+* [Support Request](https://elixirforum.com/tag/phoenix_live_head)
+* [Feature Request](https://elixirforum.com/t/52803)
 
 We do our best to keep the issue tracker tidy and organized, making it useful
 for everyone. For example, we classify open issues per perceived difficulty,
-making it easier for developers to [contribute to Phoenix Localized Routes](#pull-requests).
+making it easier for developers to [contribute to Phoenix Live Head](#pull-requests).
 
 ## Bug reports
 
@@ -32,7 +32,7 @@ Guidelines for bug reports:
    reported.
 
 2. **Check if the issue has been fixed** &mdash; try to reproduce it using the
-   `master` branch in the repository.
+   `main` branch in the repository.
 
 3. **Isolate and report the problem** &mdash; ideally create a reduced test
    case.
@@ -62,7 +62,7 @@ Example:
 
 ## Feature requests
 
-Feature requests are welcome and should be discussed on [the Phoenix Localized Routes topic on the Elixir forum](https://elixirforum.com/t/phoenix-localized-routes-localize-your-phoenix-website-with-multilingual-urls/48486). But take a moment to find
+Feature requests are welcome and should be discussed on [the Phoenix Live Head topic on the Elixir forum](https://elixirforum.com/t/52803). But take a moment to find
 out whether your idea fits with the scope and aims of the project. It's up to *you*
 to make a strong case to convince the community of the merits of this feature.
 Please provide as much detail and context as possible.
@@ -101,16 +101,16 @@ in order to craft an excellent pull request:
 2. If you cloned a while ago, get the latest changes from upstream, and update your fork:
 
    ```bash
-   git checkout master
-   git pull upstream master
+   git checkout main
+   git pull upstream main
    git push
    ```
 
-3. Create a new topic branch (off of `master`) to contain your feature, change,
+3. Create a new topic branch (off of `main`) to contain your feature, change,
    or fix.
 
-   **IMPORTANT**: Making changes in `master` is discouraged. You should always
-   keep your local `master` in sync with upstream `master` and make your
+   **IMPORTANT**: Making changes in `main` is discouraged. You should always
+   keep your local `main` in sync with upstream `main` and make your
    changes in topic branches.
 
    ```bash
@@ -139,17 +139,17 @@ in order to craft an excellent pull request:
     with a clear title and description.
 
 8. If you haven't updated your pull request for a while, you should consider
-   rebasing on master and resolving any conflicts.
+   rebasing on main and resolving any conflicts.
 
-   **IMPORTANT**: _Never ever_ merge upstream `master` into your branches. You
-   should always `git rebase` on `master` to bring your changes up to date when
+   **IMPORTANT**: _Never ever_ merge upstream `main` into your branches. You
+   should always `git rebase` on `main` to bring your changes up to date when
    necessary.
 
    ```bash
-   git checkout master
-   git pull upstream master
+   git checkout main
+   git pull upstream main
    git checkout <your-topic-branch>
-   git rebase master
+   git rebase main
    ```
 
 Thank you for your contributions!
