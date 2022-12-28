@@ -5,22 +5,30 @@
 
   The available command actions support a variety of utility operations useful for
   HTML Head manipulation. Such as setting or removing tag attributes and
-  adding or removing CSS classes for vector (SVG) favicons.
+  adding or removing CSS classes. 
 
   > #### Note {: .info}
-  > This lib is not meant to be used directly. Have a look at `Phx.Live.Favicon`
-  > and `Phx.Live.Metadata`. Those libs provide a cleaner syntax and specific
-  > documentation for their intended usage.
+  > When using this lib directly, consider publishing a high-level lib
+  > like [Phx.Live.Favicon](https://hexdocs.pm/phoenix_live_favicon/). 
+  > High-level libs provide a cleaner syntax and specific documentation
+  > for their intended usage.
+
+## Documentation
+Documentation can be found at [HexDocs](https://hexdocs.pm/phoenix_live_head).
+
+## Support, Feature Requests and Contributing
+See [CONTRIBUTING](CONTRIBUTING.md)
+
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `phoenix_live_head` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `phoenix_live_head` to your list of 
+dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:phoenix_live_head, "~> 0.1.1"}
+    {:phoenix_live_head, "~> 0.1.2"}
   ]
 end
 ```
@@ -36,7 +44,15 @@ import topbar from "../vendor/topbar"
 import "phoenix_live_head" // <-- ADD HERE.
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/phoenix_live_head>.
+## Development
 
+- Assets can be build using `mix assets.build`
+- Override `:phoenix_live_head` in your test application with a local path:
+```elixir
+# example
+def deps do
+  [
+    {:phoenix_live_head, path: "../phoenix_live_head", override: true}
+  ]
+end
+```
