@@ -31,7 +31,7 @@ defmodule Phx.Live.Head.MixProject do
       {:phoenix_live_view, ">= 0.17.0"},
       {:esbuild, ">= 0.2.0", only: :dev},
       {:ex_doc, ">= 0.27.0", optional: true},
-      {:jason, optional: true}
+      {:jason, ">= 1.0.0", optional: true}
     ]
   end
 
