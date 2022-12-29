@@ -4,6 +4,7 @@ Discards previous changes put in events for given element or attribute when usin
 
 * Fix: preserve event order
 * Fix: predictable behavior when using `reset/1` or `reset/2`.
+* Fix: undefined class name after reset
 
 ## v0.1.1
 Fix: Loosen dependency versions
