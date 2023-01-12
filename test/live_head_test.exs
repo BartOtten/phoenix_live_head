@@ -19,7 +19,7 @@ defmodule Phx.Live.HeadTest do
     result =
       %Socket{}
       |> push("link[other]", :dynamic, "href", "build-error")
-      |> push("link[other]", :set, "class", ".class-of-99")
+      |> push("link[other]", :set, "class", "class-of-99")
       |> Phoenix.LiveView.Utils.get_push_events()
 
     assert [["hd", %{"link[other]" => [[:d, _, _], [:s, _, _]]}]] = result
@@ -29,7 +29,7 @@ defmodule Phx.Live.HeadTest do
     result =
       %Socket{}
       |> push("link[other]", :set, "href", "favicon/test.png")
-      |> push("link[other]", :set, "class", ".class-of-99")
+      |> push("link[other]", :set, "class", "class-of-99")
       |> push("link[other]", :set, "id", "#privacy")
       |> Phoenix.LiveView.Utils.get_push_events()
 
@@ -40,9 +40,9 @@ defmodule Phx.Live.HeadTest do
     result =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
       |> push("a", :set, "id", "#privacy")
-      |> push("p", :set, "class", ".paragraph")
+      |> push("p", :set, "class", "paragraph")
       |> Phoenix.LiveView.Utils.get_push_events()
 
     assert [
@@ -61,8 +61,8 @@ defmodule Phx.Live.HeadTest do
       %Socket{}
       |> push_event("other", %{foo: :bar})
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
-      |> push("p", :set, "class", ".paragraph")
+      |> push("a", :set, "class", "class-of-99")
+      |> push("p", :set, "class", "paragraph")
       |> push_event("p", %{bar: :baz})
       |> Phoenix.LiveView.Utils.get_push_events()
 
@@ -78,9 +78,9 @@ defmodule Phx.Live.HeadTest do
       %Socket{}
       |> reset("a")
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
       |> push("a", :set, "id", "#privacy")
-      |> push("p", :set, "class", ".paragraph")
+      |> push("p", :set, "class", "paragraph")
       |> Phoenix.LiveView.Utils.get_push_events()
 
     assert [
@@ -103,7 +103,7 @@ defmodule Phx.Live.HeadTest do
     result =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
       |> push("a", :set, "href", "http:///www.updated.url/watch?none")
       |> Phoenix.LiveView.Utils.get_push_events()
 
@@ -112,7 +112,7 @@ defmodule Phx.Live.HeadTest do
                "hd",
                %{
                  "a" => [
-                   [:s, "c", ".class-of-99"],
+                   [:s, "c", "class-of-99"],
                    [:s, "h", "http:///www.updated.url/watch?none"]
                  ]
                }
@@ -124,9 +124,9 @@ defmodule Phx.Live.HeadTest do
     socket =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
       |> push("a", :set, "id", "#privacy")
-      |> push("p", :set, "class", ".paragraph")
+      |> push("p", :set, "class", "paragraph")
       |> push_event("other", %{foo: :bar})
       |> reset("a")
 
@@ -138,7 +138,7 @@ defmodule Phx.Live.HeadTest do
                "hd",
                %{
                  "a" => ["i"],
-                 "p" => [[:s, "c", ".paragraph"]]
+                 "p" => [[:s, "c", "paragraph"]]
                }
              ]
            ] = result
@@ -146,7 +146,7 @@ defmodule Phx.Live.HeadTest do
     socket =
       socket
       |> push("a", :set, "href", "http:///www.updated.url/watch?none")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
 
     result = Phoenix.LiveView.Utils.get_push_events(socket)
 
@@ -158,9 +158,9 @@ defmodule Phx.Live.HeadTest do
                  "a" => [
                    "i",
                    [:s, "h", "http:///www.updated.url/watch?none"],
-                   [:s, "c", ".class-of-99"]
+                   [:s, "c", "class-of-99"]
                  ],
-                 "p" => [[:s, "c", ".paragraph"]]
+                 "p" => [[:s, "c", "paragraph"]]
                }
              ]
            ] = result
@@ -170,7 +170,7 @@ defmodule Phx.Live.HeadTest do
     socket =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-      |> push("a", :set, "class", ".class-of-99")
+      |> push("a", :set, "class", "class-of-99")
       |> push_event("other", %{foo: :bar})
       |> reset("a", "href")
 
@@ -182,7 +182,7 @@ defmodule Phx.Live.HeadTest do
                "hd",
                %{
                  "a" => [
-                   [:s, "c", ".class-of-99"],
+                   [:s, "c", "class-of-99"],
                    [:i, "h", "i"]
                  ]
                }
@@ -193,7 +193,7 @@ defmodule Phx.Live.HeadTest do
     socket =
       socket
       |> push("a", :set, "href", "http:///www.updated.url/watch?none")
-      |> push("a", :set, "class", ".class-of-67")
+      |> push("a", :set, "class", "class-of-67")
 
     result = Phoenix.LiveView.Utils.get_push_events(socket)
 
@@ -204,7 +204,7 @@ defmodule Phx.Live.HeadTest do
                %{
                  "a" => [
                    [:s, "h", "http:///www.updated.url/watch?none"],
-                   [:s, "c", ".class-of-67"]
+                   [:s, "c", "class-of-67"]
                  ]
                }
              ]
