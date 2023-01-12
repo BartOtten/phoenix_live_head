@@ -52,14 +52,15 @@ defmodule Phx.Live.Head do
   """
 
   import Phoenix.LiveView, only: [push_event: 3]
+
   alias Phoenix.LiveView.Socket
 
   @initial "i"
 
   @type action :: :add | :dynamic | :initial | :remove | :set | :toggle
   @type query :: String.t()
-  @type attr :: String.t()
-  @type value :: String.t()
+  @type attr :: String.t() | atom()
+  @type value :: String.t() | atom() | integer()
   @typep reset :: String.t()
   @typep change :: [...] | reset
   @typep details :: map()
@@ -91,14 +92,14 @@ defmodule Phx.Live.Head do
     socket |> put_or_merge_head_events(query, [action, attr, value])
   end
 
-  @spec maybe_min_attr(attr) :: binary
+  @spec maybe_min_attr(attr) :: String.t()
   defp maybe_min_attr("class"), do: "c"
   defp maybe_min_attr("class-name"), do: "c"
   defp maybe_min_attr("href"), do: "h"
   defp maybe_min_attr(other) when is_binary(other), do: other
   defp maybe_min_attr(other) when is_atom(other), do: to_string(other) |> maybe_min_attr()
 
-  @spec maybe_min_query(query) :: binary
+  @spec maybe_min_query(query) :: String.t()
   defp maybe_min_query("link[rel*='icon']"), do: "f"
   defp maybe_min_query(other) when is_binary(other), do: other
 
