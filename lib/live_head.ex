@@ -17,6 +17,12 @@ defmodule Phx.Live.Head do
   using `document.querySelectorAll(query)`.
 
   ## Actions
+
+  ### Nodes / Elements
+    * `backup` - Takes s snapshot of all selected nodes.
+    * `restore` - Restores a saved snapshot
+
+  ### Attributes
   The actions are applied to an attribute in all selected HTML elements.
 
   Supported actions on the "class" attribute:
@@ -56,14 +62,17 @@ defmodule Phx.Live.Head do
   alias Phoenix.LiveView.Socket
 
   @initial "i"
+  @backup "b"
+  @restore "r"
+  @all "*"
 
-  @type action :: :add | :dynamic | :initial | :remove | :set | :toggle
+  @type action :: :add | :dynamic | :initial | :remove | :set | :toggle | :backup | :restore
   @type query :: String.t()
   @type attr :: String.t() | atom()
   @type value :: String.t() | atom() | integer()
   @typep reset :: String.t()
   @typep change :: [...] | reset
-  @typep details :: map()
+  @type key :: String.t() | atom() | integer()
 
   @doc """
   Reset all `attributes` of elements matching `query` to their initial value.
@@ -71,7 +80,7 @@ defmodule Phx.Live.Head do
   @spec reset(Socket.t(), query) :: Socket.t()
   def reset(socket, query) do
     query = maybe_min_query(query)
-    put_or_merge_head_events(socket, query, @initial)
+    push_or_merge_head_event(socket, query, [@initial, @all, @initial])
   end
 
   @doc """
@@ -81,15 +90,34 @@ defmodule Phx.Live.Head do
   def reset(socket, query, attr), do: push(socket, query, :initial, attr, @initial)
 
   @doc """
+  Backups the current values of elements matching `query` under `key`
+  """
+  @spec backup(Socket.t(), query, key, attr) :: Socket.t()
+  def backup(socket, query, key, attr \\ @all) do
+    query = maybe_min_query(query)
+    push_or_merge_head_event(socket, query, [@backup, attr, key])
+  end
+
+  @doc """
+  Restores the current values of elements matching `query` under `key`
+  """
+  @spec restore(Socket.t(), query, key, attr) :: Socket.t()
+  def restore(socket, query, key, attr \\ @all) do
+    query = maybe_min_query(query)
+    push_or_merge_head_event(socket, query, [@restore, attr, key])
+  end
+
+  @doc """
   Pushes `action` to apply on `attribute` of elements matching `query`. See [Actions](#module-actions) for available actions.
   """
-  @spec push(Socket.t(), query, action, attr, value) :: Socket.t()
-  def push(socket, query, action, attr, value) do
+  @spec push(Socket.t(), query, action, attr, value | nil) :: Socket.t()
+  def push(socket, query, action, attr, value \\ nil)
+      when not (action != :remove and is_nil(value)) do
     query = maybe_min_query(query)
     action = min_action(action)
     attr = maybe_min_attr(attr)
 
-    socket |> put_or_merge_head_events(query, [action, attr, value])
+    push_or_merge_head_event(socket, query, [action, attr, value])
   end
 
   @spec maybe_min_attr(attr) :: String.t()
@@ -103,41 +131,18 @@ defmodule Phx.Live.Head do
   defp maybe_min_query("link[rel*='icon']"), do: "f"
   defp maybe_min_query(other) when is_binary(other), do: other
 
-  @spec min_action(action) :: :a | :d | :i | :r | :s | :t
+  @spec min_action(action) :: :a | :d | :i | :x | :s | :t | :b | :r
   defp min_action(:dynamic), do: :d
+  defp min_action(:backup), do: @backup
+  defp min_action(:restore), do: @restore
   defp min_action(:set), do: :s
-  defp min_action(:remove), do: :r
+  defp min_action(:remove), do: :x
   defp min_action(:add), do: :a
   defp min_action(:toggle), do: :t
   defp min_action(:initial), do: :i
 
-  @spec reject_previous_attr_changes(previous_changes :: [change], attr) :: [change]
-  defp reject_previous_attr_changes(previous_changes, attr) do
-    Enum.reject(previous_changes, fn
-      [_, attr2, _] -> attr2 == attr
-      @initial -> false
-    end)
-  end
-
-  @spec put_query_change(details, query, change) :: [change]
-  defp put_query_change(details, query, change) do
-    ["hd", Map.put(details, query, [change])]
-  end
-
-  @spec merge_query_change(details, query, change) :: [change]
-  defp merge_query_change(details, query, change) do
-    [_action, attr, _value] = change
-
-    previous_changes =
-      details[query]
-      |> reject_previous_attr_changes(attr)
-
-    combined_changes = previous_changes ++ [change]
-    ["hd", Map.put(details, query, combined_changes)]
-  end
-
-  @spec put_or_merge_head_events(Socket.t(), query, change) :: Socket.t()
-  defp put_or_merge_head_events(%Socket{} = socket, query, change)
+  @spec push_or_merge_head_event(Socket.t(), query, change) :: Socket.t()
+  defp push_or_merge_head_event(%Socket{} = socket, query, change)
        when is_binary(query) and (is_list(change) or change === @initial) do
     # use an accumulator to signal if head events were merged so
     # the list only has to be traversed once.
@@ -145,14 +150,11 @@ defmodule Phx.Live.Head do
       socket
       |> Phoenix.LiveView.Utils.get_push_events()
       |> Enum.map_reduce(false, fn
-        ["hd", details], _ when change == @initial or not is_map_key(details, query) ->
-          {put_query_change(details, query, change), true}
+        ["hd", %{c: changes}], _ ->
+          {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
 
-        ["hd", details], _ when is_map_key(details, query) ->
-          {merge_query_change(details, query, change), true}
-
-        other, acc ->
-          {other, acc}
+        other, merged? ->
+          {other, merged?}
       end)
 
     #  we either simply push a new event to the stack when their were no merged
@@ -161,7 +163,42 @@ defmodule Phx.Live.Head do
     if merged? do
       put_in(socket.private.__changed__.push_events, events)
     else
-      push_event(socket, "hd", Map.put(%{}, query, [change]))
+      push_event(socket, "hd", %{c: [[query, [change]]]})
     end
   end
+
+  # no changes
+  defp push_or_merge_head_change([[] = rest], query, change), do: new_bucket(query, rest, change)
+
+  # query matches query of last set of changes
+  defp push_or_merge_head_change([[q, changes] | rest], q, [action, attr, _] = change) do
+    cond do
+      action == @initial ->
+        changes = split_and_override(changes, attr, [@backup])
+        prepend_to_bucket(q, changes, change, rest)
+
+      action == @backup ->
+        prepend_to_bucket(q, changes, change, rest)
+
+      action == @restore and attr == @all ->
+        changes = split_and_override(changes, attr, [@backup])
+        prepend_to_bucket(q, changes, change, rest)
+
+      true ->
+        changes = split_and_override(changes, attr, [@backup, @initial, @restore])
+        prepend_to_bucket(q, changes, change, rest)
+    end
+  end
+
+  defp push_or_merge_head_change(rest, query, change), do: new_bucket(query, rest, change)
+
+  defp split_and_override(changes, attr, splitters) do
+    {overridable, to_keep} =
+      Enum.split_while(changes, fn [action, _a, _v] -> action not in splitters end)
+
+    Enum.reject(overridable, &match?([_, ^attr, _], &1)) ++ to_keep
+  end
+
+  defp new_bucket(query, rest, change), do: [[query, [change]] | rest]
+  defp prepend_to_bucket(query, changes, change, rest), do: [[query, [change | changes]] | rest]
 end
