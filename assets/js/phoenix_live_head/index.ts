@@ -1,5 +1,4 @@
-window.addEventListener("phx:hd", (event: Event) => {
-
+module PhxLiveHead {
   // TYPES
   type action = "s" | "a" | "x" |"b" |"r" | "t" | "i" | "d";
   type attr = string;
@@ -10,14 +9,20 @@ window.addEventListener("phx:hd", (event: Event) => {
   type state = { [key: attr]: string | null}
 
   // CONSTANTS
+  export const NAMESPACE: string = 'plh';
   const ALL_ATTR: string = '*';
   const CLASS_ATTR: string = "class";
   const ATTR: { [key: string]: string } = { "c": CLASS_ATTR, "h": "href" }
   const QUERY: { [key: string]: string } = { "f": "link[rel*='icon']" }
 
   // HELPERS
-  function kebabToCamelCase(s: string): string { return s.replace(/-./g, x => x[1].toUpperCase()); }
-  function stateKey(key: string, el: HTMLElement): string { return `${el.id}-${key}`; }
+  function camelToKebabCase(s: string): string { return s.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase(); }
+  function stateKey(key: string, el: HTMLElement): string { return `${NAMESPACE}:${el.dataset['id']}-${key}`; }
+  function randId(): string {
+  return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+}
   function attrObject(el: HTMLElement): state {
     return Array.from(el.attributes)
       .filter(a => a.specified)
@@ -78,26 +83,41 @@ window.addEventListener("phx:hd", (event: Event) => {
     }
   }
 
-  function setDynamicAttribute(el: HTMLElement, attr: attr, value: value): void {
-    const dynAttr = kebabToCamelCase(`dynamic-${attr}`)
-    const dynParts = el.dataset[dynAttr]?.split("{dynamic}", 2)
+  function setDynamicAttributes(el: HTMLElement, replacements: {[key: string]: string}){
+    for(const [dynKey, dynTempl] of Object.entries(el.dataset).filter(([key, _]) => key.startsWith('dynamic'))) {
+      const attr = camelToKebabCase(dynKey.substring("dynamic".length))
+      if(dynTempl === undefined){return;}
+      if(Object.keys(replacements).some(replacement => dynTempl?.includes(`{${replacement}}`))){
+        const newValue: string = dynTempl?.replace(
+          /{(\w+)}/g,
+          (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
+            replacements.hasOwnProperty(placeholderWithoutDelimiters) ?
+              replacements[placeholderWithoutDelimiters] : sessionStorage.getItem(stateKey('dyn-' + placeholderWithoutDelimiters, el)) || `[!value for ${placeholderWithDelimiters} not found!]`
+        );
 
-    if (!dynParts) { throw 'No dynamic scheme set'; }
-
-    if (dynParts.length == 1) {
-      const [prefix] = dynParts
-      el.setAttribute(attr, `${prefix}${value}`)
-    } else if (dynParts.length === 2) {
-      const [prefix, suffix] = dynParts
-      el.setAttribute(attr, `${prefix}${value}${suffix}`)
+        el.setAttribute(attr, newValue)
+      }
     }
   }
 
-
   function applyToElement(el: HTMLElement, changes: change[]) {
+    let replacements = {}
+
     changes.forEach(function (change: change) {
       const [action, attr_input, value] = change;
       const attr = ATTR[attr_input] || attr_input
+
+      // we collect all replacements so we can set them all at once
+      // as there might be multiple in a single attribute
+      if (action === "d") {
+        replacements = {[attr]: value, ...replacements};
+        sessionStorage.setItem(stateKey('dyn-' + attr, el), value);
+        return;
+        // the replacement takes place before any other action
+      } else if (Object.keys(replacements).length > 0) {
+        setDynamicAttributes(el, replacements);
+        replacements = []
+      }
 
       if (attr === CLASS_ATTR) {
         switch (action) {
@@ -117,30 +137,51 @@ window.addEventListener("phx:hd", (event: Event) => {
           case "b": backupState(el, attr_input, value); break;
           case "r": restoreState(el, attr, value); break;
           case "i": restoreState(el, attr, 'orig'); break;
-          case "d": setDynamicAttribute(el, attr, value); break;
           default: null
         }
       }
     }
     );
+
+    // execute remaining replacements when there was no
+    // subsequent action
+    if (Object.keys(replacements).length > 0) {
+        setDynamicAttributes(el, replacements);
+    }
+
   };
 
-  function main(event: Event): void {
+  export function main(event: Event): void {
     const detail: detail = (event as CustomEvent).detail;
     // the list of [query, changes] is sent in reverse, due to prepending items
-    for (const [query_input, changes] of detail.c.reverse()) {
+    for (const [query_input, changes_input] of detail.c.reverse()) {
       const query = QUERY[query_input] || query_input
       const elements = document.querySelectorAll(query);
+      // the list of changes is sent in reverse, due to prepending items
+      const changes = changes_input.reverse()
 
       elements.forEach(el => {
         const tel = el as HTMLElement;
+        if(!tel.dataset['id']){tel.dataset['id'] = randId()}
         if (!isStateBackupped(tel, ALL_ATTR, 'orig')) { backupState(tel, ALL_ATTR, 'orig') }
 
-        // the list of changes is sent in reverse, due to prepending items
-        applyToElement(tel, changes.reverse())
+        applyToElement(tel, changes)
       })
     }
-  }
 
-  main(event);
+    // force a redraw as sometimes changes are not detected properly
+    const element = document.querySelector('head');
+    if (element ) {
+      const clone = element.cloneNode(true);
+      element.replaceWith(clone);
+    }
+
+  }
+}
+
+// clear session keys of Phoenix Live Head
+Object.keys(sessionStorage).forEach(key => key.startsWith(PhxLiveHead.NAMESPACE) && sessionStorage.removeItem(key))
+
+window.addEventListener("phx:hd", (event: Event) => {
+  PhxLiveHead.main(event);
 });

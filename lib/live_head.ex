@@ -19,8 +19,9 @@ defmodule Phx.Live.Head do
   ## Actions
 
   ### Nodes / Elements
-    * `backup` - Takes s snapshot of all selected nodes.
+    * `snap` - Takes a snapshot of all selected nodes.
     * `restore` - Restores a saved snapshot
+    * `dynamic` - Set the value of a `{placeholder}`
 
   ### Attributes
   The actions are applied to an attribute in all selected HTML elements.
@@ -37,19 +38,23 @@ defmodule Phx.Live.Head do
 
     * `set` - Set value of attribute
     * `initial` - Reset attribute to it's intial value
-    * `dynamic` - Set the value of a `{dynamic}` attribute
+    * `snap` - Takes a snapshot of all selected nodes.
+    * `restore` - Restores a saved snapshot
 
-  ## Dynamic attributes
+  ## Dynamic attributes / placeholders
 
-  To define a dynamic attribute, the element in the template must have a `data-dynamic-[attr]`
-  attribute with a value containing the placeholder notation `{dynamic}`.
+  To use a dynamic value for an attribute, the element must have an additional
+  `data-dynamic-[attribute]` attribute with a value containing a named
+  placeholder. For example: `{sub}`.
 
   **Example**
   ```html
-  <link rel='icon' href="default_fav.png" data-dynamic-href="favs/{dynamic}/fav-16x16.png">
+    <!-- data-dynamic-href is set -->
+    <!-- {sub} is used in it's value -->
+  <link rel='icon' href="default_fav.png" data-dynamic-href="favs/{sub}/fav-16x16.png">
   ```
 
-  When an event is pushed with `target = "link[rel*=icon]"`, `action = :dynamic` and
+  When an event is pushed with `target = "link[rel*=icon]"`, `action = :dynamic`, `attr = "sub", and
   `value = "new_message"` the result wil look like:
 
   ```html
@@ -62,17 +67,16 @@ defmodule Phx.Live.Head do
   alias Phoenix.LiveView.Socket
 
   @initial "i"
-  @backup "b"
+  @snap "b"
   @restore "r"
   @all "*"
 
-  @type action :: :add | :dynamic | :initial | :remove | :set | :toggle | :backup | :restore
+  @type action :: :add | :dynamic | :initial | :remove | :set | :toggle | :snap | :restore
   @type query :: String.t()
   @type attr :: String.t() | atom()
   @type value :: String.t() | atom() | integer()
-  @typep reset :: String.t()
-  @typep change :: [...] | reset
-  @type key :: String.t() | atom() | integer()
+  @type name :: String.t() | atom()
+  @type change :: [...]
 
   @doc """
   Reset all `attributes` of elements matching `query` to their initial value.
@@ -90,21 +94,21 @@ defmodule Phx.Live.Head do
   def reset(socket, query, attr), do: push(socket, query, :initial, attr, @initial)
 
   @doc """
-  Backups the current values of elements matching `query` under `key`
+   Create a snapshot named `name` of an `attribute` from all favicon link element
   """
-  @spec backup(Socket.t(), query, key, attr) :: Socket.t()
-  def backup(socket, query, key, attr \\ @all) do
+  @spec snap(Socket.t(), query, name, attr) :: Socket.t()
+  def snap(socket, query, name, attr \\ @all) do
     query = maybe_min_query(query)
-    push_or_merge_head_event(socket, query, [@backup, attr, key])
+    push_or_merge_head_event(socket, query, [@snap, attr, name])
   end
 
   @doc """
-  Restores the current values of elements matching `query` under `key`
+   Restore an `attribute` from snapshot with named `name`
   """
-  @spec restore(Socket.t(), query, key, attr) :: Socket.t()
-  def restore(socket, query, key, attr \\ @all) do
+  @spec restore(Socket.t(), query, name, attr) :: Socket.t()
+  def restore(socket, query, name, attr \\ @all) do
     query = maybe_min_query(query)
-    push_or_merge_head_event(socket, query, [@restore, attr, key])
+    push_or_merge_head_event(socket, query, [@restore, attr, name])
   end
 
   @doc """
@@ -133,7 +137,7 @@ defmodule Phx.Live.Head do
 
   @spec min_action(action) :: :a | :d | :i | :x | :s | :t | :b | :r
   defp min_action(:dynamic), do: :d
-  defp min_action(:backup), do: @backup
+  defp min_action(:snap), do: @snap
   defp min_action(:restore), do: @restore
   defp min_action(:set), do: :s
   defp min_action(:remove), do: :x
@@ -174,25 +178,25 @@ defmodule Phx.Live.Head do
   defp push_or_merge_head_change([[q, changes] | rest], q, [action, attr, _] = change) do
     cond do
       action == @initial ->
-        changes = split_and_override(changes, attr, [@backup])
+        changes = split_and_override_attr(changes, attr, [@snap])
         prepend_to_bucket(q, changes, change, rest)
 
-      action == @backup ->
+      action == @snap ->
         prepend_to_bucket(q, changes, change, rest)
 
-      action == @restore and attr == @all ->
-        changes = split_and_override(changes, attr, [@backup])
+      action == @restore ->
+        changes = split_and_override_attr(changes, attr, [@snap])
         prepend_to_bucket(q, changes, change, rest)
 
       true ->
-        changes = split_and_override(changes, attr, [@backup, @initial, @restore])
+        changes = split_and_override_attr(changes, attr, [@snap, @initial, @restore])
         prepend_to_bucket(q, changes, change, rest)
     end
   end
 
   defp push_or_merge_head_change(rest, query, change), do: new_bucket(query, rest, change)
 
-  defp split_and_override(changes, attr, splitters) do
+  defp split_and_override_attr(changes, attr, splitters) do
     {overridable, to_keep} =
       Enum.split_while(changes, fn [action, _a, _v] -> action not in splitters end)
 
