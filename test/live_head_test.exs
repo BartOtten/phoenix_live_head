@@ -1,5 +1,5 @@
 defmodule Phx.Live.HeadTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Phoenix.LiveView, only: [push_event: 3]
   alias Phoenix.LiveView.Socket
@@ -12,7 +12,7 @@ defmodule Phx.Live.HeadTest do
       |> push("link[other]", :set, "href", "favicon/test.png")
       |> Phoenix.LiveView.Utils.get_push_events()
 
-    assert [["hd", %{"f" => [[_, _, _]], "link[other]" => [[_, _, _]]}]] = result
+    assert [["hd", %{c: [["link[other]", [[_, "h", _]]], ["f", [[_, "h", _]]]]}]] = result
   end
 
   test "Action minimizing" do
@@ -22,7 +22,8 @@ defmodule Phx.Live.HeadTest do
       |> push("link[other]", :set, "class", "class-of-99")
       |> Phoenix.LiveView.Utils.get_push_events()
 
-    assert [["hd", %{"link[other]" => [[:d, _, _], [:s, _, _]]}]] = result
+    assert [["hd", %{c: [["link[other]", [[:s, "c", "class-of-99"], [:d, "h", "build-error"]]]]}]] =
+             result
   end
 
   test "Attribute minimizing" do
@@ -33,7 +34,23 @@ defmodule Phx.Live.HeadTest do
       |> push("link[other]", :set, "id", "#privacy")
       |> Phoenix.LiveView.Utils.get_push_events()
 
-    assert [["hd", %{"link[other]" => [[_, "h", _], [_, "c", _], [_, "id", _]]}]] = result
+    assert [
+             [
+               "hd",
+               %{
+                 c: [
+                   [
+                     "link[other]",
+                     [
+                       [:s, "id", "#privacy"],
+                       [:s, "c", "class-of-99"],
+                       [:s, "h", "favicon/test.png"]
+                     ]
+                   ]
+                 ]
+               }
+             ]
+           ] = result
   end
 
   test "Events are merged" do
@@ -49,8 +66,17 @@ defmodule Phx.Live.HeadTest do
              [
                "hd",
                %{
-                 "a" => [[_, _, _] = _event1, [_, _, _] = _event2, [_, _, _] = _event3],
-                 "p" => [[_, _, _]]
+                 c: [
+                   ["p", [[:s, "c", "paragraph"]]],
+                   [
+                     "a",
+                     [
+                       [:s, "id", "#privacy"],
+                       [:s, "c", "class-of-99"],
+                       [:s, "h", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"]
+                     ]
+                   ]
+                 ]
                }
              ]
            ] = result
@@ -87,13 +113,18 @@ defmodule Phx.Live.HeadTest do
              [
                "hd",
                %{
-                 "a" => [
-                   "i",
-                   [_, "h", _] = _event1,
-                   [_, "c", _] = _event2,
-                   [_, "id", _] = _event3
-                 ],
-                 "p" => [[_, "c", _]]
+                 c: [
+                   ["p", [[:s, "c", "paragraph"]]],
+                   [
+                     "a",
+                     [
+                       [:s, "id", "#privacy"],
+                       [:s, "c", "class-of-99"],
+                       [:s, "h", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"],
+                       ["i", "*", "i"]
+                     ]
+                   ]
+                 ]
                }
              ]
            ] = result
@@ -111,38 +142,35 @@ defmodule Phx.Live.HeadTest do
              [
                "hd",
                %{
-                 "a" => [
-                   [:s, "c", "class-of-99"],
-                   [:s, "h", "http:///www.updated.url/watch?none"]
+                 c: [
+                   [
+                     "a",
+                     [[:s, "h", "http:///www.updated.url/watch?none"], [:s, "c", "class-of-99"]]
+                   ]
                  ]
                }
              ]
            ] = result
   end
 
-  test "Reset/1 removes pre-existing actions for the query" do
+  test "Reset/1 removes previous consecutive actions for a query" do
     socket =
       %Socket{}
       |> push("a", :set, "href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
       |> push("a", :set, "class", "class-of-99")
       |> push("a", :set, "id", "#privacy")
+      |> reset("a")
       |> push("p", :set, "class", "paragraph")
       |> push_event("other", %{foo: :bar})
-      |> reset("a")
 
     result = Phoenix.LiveView.Utils.get_push_events(socket)
 
     assert [
-             ["other", %{foo: :bar}],
-             [
-               "hd",
-               %{
-                 "a" => ["i"],
-                 "p" => [[:s, "c", "paragraph"]]
-               }
-             ]
+             ["hd", %{c: [["p", [[:s, "c", "paragraph"]]], ["a", [["i", "*", "i"]]]]}],
+             ["other", %{foo: :bar}]
            ] = result
 
+    # after reset, new values can be set
     socket =
       socket
       |> push("a", :set, "href", "http:///www.updated.url/watch?none")
@@ -151,18 +179,49 @@ defmodule Phx.Live.HeadTest do
     result = Phoenix.LiveView.Utils.get_push_events(socket)
 
     assert [
-             ["other", %{foo: :bar}],
              [
                "hd",
                %{
-                 "a" => [
-                   "i",
-                   [:s, "h", "http:///www.updated.url/watch?none"],
-                   [:s, "c", "class-of-99"]
-                 ],
-                 "p" => [[:s, "c", "paragraph"]]
+                 c: [
+                   [
+                     "a",
+                     [[:s, "c", "class-of-99"], [:s, "h", "http:///www.updated.url/watch?none"]]
+                   ],
+                   ["p", [[:s, "c", "paragraph"]]],
+                   ["a", [["i", "*", "i"]]]
+                 ]
                }
-             ]
+             ],
+             ["other", %{foo: :bar}]
+           ] = result
+
+    # non-consecutive actions are not removed
+    socket =
+      socket
+      |> push("p", :set, "class", "paragraph2")
+      |> push_event("other", %{foo: :baz})
+      |> reset("a")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+
+    assert [
+             ["other", %{foo: :baz}],
+             [
+               "hd",
+               %{
+                 c: [
+                   ["a", [["i", "*", "i"]]],
+                   ["p", [[:s, "c", "paragraph2"]]],
+                   [
+                     "a",
+                     [[:s, "c", "class-of-99"], [:s, "h", "http:///www.updated.url/watch?none"]]
+                   ],
+                   ["p", [[:s, "c", "paragraph"]]],
+                   ["a", [["i", "*", "i"]]]
+                 ]
+               }
+             ],
+             ["other", %{foo: :bar}]
            ] = result
   end
 
@@ -178,15 +237,7 @@ defmodule Phx.Live.HeadTest do
 
     assert [
              ["other", %{foo: :bar}],
-             [
-               "hd",
-               %{
-                 "a" => [
-                   [:s, "c", "class-of-99"],
-                   [:i, "h", "i"]
-                 ]
-               }
-             ]
+             ["hd", %{c: [["a", [[:i, "h", "i"], [:s, "c", "class-of-99"]]]]}]
            ] = result
 
     # href reset is overriden by set
@@ -202,9 +253,11 @@ defmodule Phx.Live.HeadTest do
              [
                "hd",
                %{
-                 "a" => [
-                   [:s, "h", "http:///www.updated.url/watch?none"],
-                   [:s, "c", "class-of-67"]
+                 c: [
+                   [
+                     "a",
+                     [[:s, "c", "class-of-67"], [:s, "h", "http:///www.updated.url/watch?none"]]
+                   ]
                  ]
                }
              ]

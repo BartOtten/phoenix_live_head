@@ -20,26 +20,26 @@ defmodule Phx.Live.Head do
 
   ### Nodes / Elements
     * `snap` - Takes a snapshot of all selected nodes.
-    * `restore` - Restores a saved snapshot
-    * `dynamic` - Set the value of a `{placeholder}`
+    * `restore` - Restores a saved snapshot.
+    * `dynamic` - Set the value of a `{placeholder}`.
 
   ### Attributes
   The actions are applied to an attribute in all selected HTML elements.
 
   Supported actions on the "class" attribute:
 
-    * `set` - Set class name(s)
-    * `add` - Add to list of class names
-    * `remove` - Remove from list of class names
-    * `toggle` - Toggle class name
-    * `initial` - Reset attribute to it's intial value
+    * `set` - Set class name(s).
+    * `add` - Add to list of class names.
+    * `remove` - Remove from list of class names.
+    * `toggle` - Toggle class name.
+    * `initial` - Reset attribute to it's intial value.
 
   Supported actions on other attributes:
 
-    * `set` - Set value of attribute
-    * `initial` - Reset attribute to it's intial value
-    * `snap` - Takes a snapshot of all selected nodes.
-    * `restore` - Restores a saved snapshot
+    * `set` - Set value of attribute.
+    * `initial` - Reset attribute to it's intial value.
+    * `snap` - Take a snapshot of all selected nodes.
+    * `restore` - Restore attributes using a saved snapshot
 
   ## Dynamic attributes / placeholders
 
@@ -55,10 +55,10 @@ defmodule Phx.Live.Head do
   ```
 
   When an event is pushed with `target = "link[rel*=icon]"`, `action = :dynamic`, `attr = "sub", and
-  `value = "new_message"` the result wil look like:
+  `value = "new_message"` the result will look like:
 
   ```html
-  <link rel='icon' href="favs/new_message/fav-16x16.png">
+  <link rel='icon' href="favs/new_message/fav-16x16.png" [...]>
   ```
   """
 
@@ -88,7 +88,7 @@ defmodule Phx.Live.Head do
   end
 
   @doc """
-  Reset an `attribute` of elements matching `query` to it's initial value
+  Reset an `attribute` of elements matching `query` to it's initial value.
   """
   @spec reset(Socket.t(), query, attr) :: Socket.t()
   def reset(socket, query, attr), do: push(socket, query, :initial, attr, @initial)
@@ -103,7 +103,7 @@ defmodule Phx.Live.Head do
   end
 
   @doc """
-   Restore an `attribute` from snapshot with named `name`
+   Restore an `attribute` from snapshot with named `name`.
   """
   @spec restore(Socket.t(), query, name, attr) :: Socket.t()
   def restore(socket, query, name, attr \\ @all) do
@@ -171,7 +171,7 @@ defmodule Phx.Live.Head do
     end
   end
 
-  # no changes
+  # no previous changes
   defp push_or_merge_head_change([[] = rest], query, change), do: new_bucket(query, rest, change)
 
   # query matches query of last set of changes
@@ -200,9 +200,15 @@ defmodule Phx.Live.Head do
     {overridable, to_keep} =
       Enum.split_while(changes, fn [action, _a, _v] -> action not in splitters end)
 
-    Enum.reject(overridable, &match?([_, ^attr, _], &1)) ++ to_keep
+    if attr == @all do
+      to_keep
+    else
+      Enum.reject(overridable, &match?([_, ^attr, _], &1)) ++ to_keep
+    end
   end
 
   defp new_bucket(query, rest, change), do: [[query, [change]] | rest]
   defp prepend_to_bucket(query, changes, change, rest), do: [[query, [change | changes]] | rest]
+
+  def pub_push_or_merge_head_change(), do: &push_or_merge_head_change/3
 end

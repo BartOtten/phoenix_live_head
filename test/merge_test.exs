@@ -1,6 +1,8 @@
 defmodule Phx.Live.MergeTest do
-  use ExUnit.Case
-  import Phx.Live.Head
+  use ExUnit.Case, async: true
+
+  def push_or_merge_head_change(a1, a2, a3),
+    do: Phx.Live.Head.pub_push_or_merge_head_change().(a1, a2, a3)
 
   @q1 "fav"
   @q2 ".class"
@@ -40,6 +42,14 @@ defmodule Phx.Live.MergeTest do
   end
 
   test "Reset clears all" do
+    result =
+      push_or_merge_head_change([[]], @q1, @event1)
+      |> push_or_merge_head_change(@q1, @reset)
+
+    assert [["fav", [["i", "*", "i"]]]] = result
+  end
+
+  test "Reset is cautious" do
     result = push_or_merge_head_change([[]], @q1, @event1)
     result = push_or_merge_head_change(result, @q1, @backup)
     assert [["fav", [["b", "*", "backup_name"], [:set, "class", "some-class"]]]] = result
