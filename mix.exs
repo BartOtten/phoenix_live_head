@@ -6,7 +6,7 @@ defmodule Phx.Live.Head.MixProject do
       name: "Phoenix Live Head",
       description: "HTML Head manipulation for Phoenix Live Views",
       app: :phoenix_live_head,
-      version: "0.2.0-rc.0",
+      version: "0.2.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       package: package(),
