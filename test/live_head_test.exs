@@ -263,4 +263,69 @@ defmodule Phx.Live.HeadTest do
              ]
            ] = result
   end
+
+  test "Remove does not need a value" do
+    socket =
+      %Socket{}
+      |> push("a", :remove, "href")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+    assert [["hd", %{c: [["a", [[:x, "h", nil]]]]}]] == result
+  end
+
+  test "Snap seperates merging" do
+    socket =
+      %Socket{}
+      |> push("a", :set, "href", "http://some.url/")
+      |> push("a", :set, "class-name", "my-class")
+      |> snap("a", "snap_name")
+      |> push("a", :set, "href", "http://other.url/")
+      |> push("a", :set, "href", "http://last.url/")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+
+    assert [
+             [
+               "hd",
+               %{
+                 c: [
+                   [
+                     "a",
+                     [
+                       [:s, "h", "http://last.url/"],
+                       ["b", "*", "snap_name"],
+                       [:s, "c", "my-class"],
+                       [:s, "h", "http://some.url/"]
+                     ]
+                   ]
+                 ]
+               }
+             ]
+           ] == result
+  end
+
+  test "Restore truncates" do
+    socket =
+      %Socket{}
+      |> push("a", :set, "href", "http://some.url/")
+      |> push("a", :toggle, "class-name", "checked")
+      |> push("a", :add, "class-name", "my-class")
+      |> restore("a", "snap_name")
+      |> push("a", :set, "href", "http://other.url/")
+      |> push("a", :set, "href", "http://last.url/")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+
+    assert [["hd", %{c: [["a", [[:s, "h", "http://last.url/"], ["r", "*", "snap_name"]]]]}]] ==
+             result
+  end
+
+  test "Unknown attributes are allowed" do
+    socket =
+      %Socket{}
+      |> push("a", :set, :unknown, "value")
+
+    result = Phoenix.LiveView.Utils.get_push_events(socket)
+    [["hd", %{c: [["a", [[:s, "unknown", "value"]]]]}]] = result
+  end
 end

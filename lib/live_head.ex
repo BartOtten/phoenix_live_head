@@ -65,6 +65,7 @@ defmodule Phx.Live.Head do
   import Phoenix.LiveView, only: [push_event: 3]
 
   alias Phoenix.LiveView.Socket
+  alias Phoenix.LiveView.Utils
 
   @initial "i"
   @snap "b"
@@ -129,16 +130,14 @@ defmodule Phx.Live.Head do
   defp maybe_min_attr("class-name"), do: "c"
   defp maybe_min_attr("href"), do: "h"
   defp maybe_min_attr(other) when is_binary(other), do: other
-  defp maybe_min_attr(other) when is_atom(other), do: to_string(other) |> maybe_min_attr()
+  defp maybe_min_attr(other) when is_atom(other), do: other |> to_string() |> maybe_min_attr()
 
   @spec maybe_min_query(query) :: String.t()
   defp maybe_min_query("link[rel*='icon']"), do: "f"
   defp maybe_min_query(other) when is_binary(other), do: other
 
-  @spec min_action(action) :: :a | :d | :i | :x | :s | :t | :b | :r
+  @spec min_action(action) :: :a | :d | :i | :x | :s | :t
   defp min_action(:dynamic), do: :d
-  defp min_action(:snap), do: @snap
-  defp min_action(:restore), do: @restore
   defp min_action(:set), do: :s
   defp min_action(:remove), do: :x
   defp min_action(:add), do: :a
@@ -152,7 +151,7 @@ defmodule Phx.Live.Head do
     # the list only has to be traversed once.
     {events, merged?} =
       socket
-      |> Phoenix.LiveView.Utils.get_push_events()
+      |> Utils.get_push_events()
       |> Enum.map_reduce(false, fn
         ["hd", %{c: changes}], _ ->
           {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
@@ -175,25 +174,26 @@ defmodule Phx.Live.Head do
   defp push_or_merge_head_change([[] = rest], query, change), do: new_bucket(query, rest, change)
 
   # query matches query of last set of changes
-  defp push_or_merge_head_change([[q, changes] | rest], q, [action, attr, _] = change) do
-    cond do
-      action == @initial ->
-        changes = split_and_override_attr(changes, attr, [@snap])
-        prepend_to_bucket(q, changes, change, rest)
-
-      action == @snap ->
-        prepend_to_bucket(q, changes, change, rest)
-
-      action == @restore ->
-        changes = split_and_override_attr(changes, attr, [@snap])
-        prepend_to_bucket(q, changes, change, rest)
-
-      true ->
-        changes = split_and_override_attr(changes, attr, [@snap, @initial, @restore])
-        prepend_to_bucket(q, changes, change, rest)
-    end
+  defp push_or_merge_head_change([[q, changes] | rest], q, [@initial, attr, _] = change) do
+    changes = split_and_override_attr(changes, attr, [@snap])
+    prepend_to_bucket(q, changes, change, rest)
   end
 
+  defp push_or_merge_head_change([[q, changes] | rest], q, [@snap, _, _] = change) do
+    prepend_to_bucket(q, changes, change, rest)
+  end
+
+  defp push_or_merge_head_change([[q, changes] | rest], q, [@restore, attr, _] = change) do
+    changes = split_and_override_attr(changes, attr, [@snap])
+    prepend_to_bucket(q, changes, change, rest)
+  end
+
+  defp push_or_merge_head_change([[q, changes] | rest], q, [_, attr, _] = change) do
+    changes = split_and_override_attr(changes, attr, [@snap, @initial, @restore])
+    prepend_to_bucket(q, changes, change, rest)
+  end
+
+  # query does not match query of last set of changes
   defp push_or_merge_head_change(rest, query, change), do: new_bucket(query, rest, change)
 
   defp split_and_override_attr(changes, attr, splitters) do
@@ -210,5 +210,5 @@ defmodule Phx.Live.Head do
   defp new_bucket(query, rest, change), do: [[query, [change]] | rest]
   defp prepend_to_bucket(query, changes, change, rest), do: [[query, [change | changes]] | rest]
 
-  def pub_push_or_merge_head_change(), do: &push_or_merge_head_change/3
+  def pub_push_or_merge_head_change, do: &push_or_merge_head_change/3
 end

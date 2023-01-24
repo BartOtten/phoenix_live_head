@@ -12,7 +12,14 @@ defmodule Phx.Live.Head.MixProject do
       package: package(),
       aliases: aliases(),
       docs: docs(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -31,7 +38,9 @@ defmodule Phx.Live.Head.MixProject do
       {:phoenix_live_view, ">= 0.17.0"},
       {:esbuild, ">= 0.2.0", only: :dev},
       {:ex_doc, ">= 0.27.0", optional: true},
-      {:jason, ">= 1.0.0", optional: true}
+      {:jason, ">= 1.0.0", optional: true},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.14", only: :test}
     ]
   end
 
