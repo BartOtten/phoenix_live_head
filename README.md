@@ -1,3 +1,9 @@
+![Coveralls](https://img.shields.io/coveralls/github/BartOtten/phoenix_live_head)
+[![Build Status](https://github.com/BartOtten/phoenix_live_head/actions/workflows/elixir.yml/badge.svg?event=push)](https://github.com/BartOtten/phoenix_live_head/actions/workflows/elixir.yml)
+[![Last Updated](https://img.shields.io/github/last-commit/BartOtten/phoenix_live_head.svg)](https://github.com/BartOtten/phoenix_live_head/commits/main)
+[![Hex.pm](https://img.shields.io/hexpm/v/phoenix_live_head)](https://hex.pm/packages/phoenix_live_head)
+![Hex.pm](https://img.shields.io/hexpm/l/phoenix_live_head)
+
 # Phoenix Live Head
 
   Provides commands for manipulating the HTML Head of Phoenix Live View applications
