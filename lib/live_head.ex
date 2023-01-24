@@ -210,5 +210,6 @@ defmodule Phx.Live.Head do
   defp new_bucket(query, rest, change), do: [[query, [change]] | rest]
   defp prepend_to_bucket(query, changes, change, rest), do: [[query, [change | changes]] | rest]
 
+  @doc false
   def pub_push_or_merge_head_change, do: &push_or_merge_head_change/3
 end

@@ -13,6 +13,7 @@ defmodule Phx.Live.Head.MixProject do
       aliases: aliases(),
       docs: docs(),
       deps: deps(),
+      source_url: "https://github.com/BartOtten/phoenix_live_head",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,
