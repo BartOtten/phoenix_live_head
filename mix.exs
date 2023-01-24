@@ -6,13 +6,20 @@ defmodule Phx.Live.Head.MixProject do
       name: "Phoenix Live Head",
       description: "HTML Head manipulation for Phoenix Live Views",
       app: :phoenix_live_head,
-      version: "0.1.2",
+      version: "0.2.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       package: package(),
       aliases: aliases(),
       docs: docs(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -31,7 +38,9 @@ defmodule Phx.Live.Head.MixProject do
       {:phoenix_live_view, ">= 0.17.0"},
       {:esbuild, ">= 0.2.0", only: :dev},
       {:ex_doc, ">= 0.27.0", optional: true},
-      {:jason, ">= 1.0.0", optional: true}
+      {:jason, ">= 1.0.0", optional: true},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.14", only: :test}
     ]
   end
 
