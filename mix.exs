@@ -36,7 +36,7 @@ defmodule Phx.Live.Head.MixProject do
     [
       {:phoenix, ">= 1.6.0"},
       {:phoenix_html, ">= 3.1.0"},
-      {:phoenix_live_view, ">= 0.17.0"},
+      {:phoenix_live_view, ">= 0.19.0"},
       {:esbuild, ">= 0.2.0", only: :dev},
       {:ex_doc, ">= 0.27.0", optional: true},
       {:jason, ">= 1.0.0", optional: true},
