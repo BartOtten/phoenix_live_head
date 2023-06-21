@@ -164,7 +164,7 @@ defmodule Phx.Live.Head do
     #  head events or we replace the whole list of events with our mapped variant
     #  including merged head events
     if merged? do
-      put_in(socket.private.__changed__.push_events, events)
+      put_in(socket.private.__temp__.push_events, events)
     else
       push_event(socket, "hd", %{c: [[query, [change]]]})
     end
