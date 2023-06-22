@@ -160,13 +160,18 @@ defmodule Phx.Live.Head do
           {other, merged?}
       end)
 
-    #  we either simply push a new event to the stack when their were no merged
-    #  head events or we replace the whole list of events with our mapped variant
-    #  including merged head events
-    if merged? do
-      put_in(socket.private.__temp__.push_events, events)
-    else
-      push_event(socket, "hd", %{c: [[query, [change]]]})
+    cond do
+      # Phoenix LiveView < 0.19
+      merged? && Map.has_key?(socket.private, :__changed__) ->
+        put_in(socket.private.__changed__.push_events, events)
+
+      # Phoenix LiveView >= 0.19
+      merged? ->
+        put_in(socket.private.__temp__.push_events, events)
+
+      # simply push a new event to the stack when there are no merged head events
+      true ->
+        push_event(socket, "hd", %{c: [[query, [change]]]})
     end
   end
 
