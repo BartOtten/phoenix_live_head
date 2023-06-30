@@ -152,12 +152,8 @@ defmodule Phx.Live.Head do
     {events, merged?} =
       socket
       |> Utils.get_push_events()
-      |> Enum.map_reduce(false, fn
-        ["hd", %{c: changes}], _ ->
-          {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
-
-        other, merged? ->
-          {other, merged?}
+      |> Enum.map_reduce(false, fn changes, merged? ->
+        event_reducer(changes, merged?, query, change)
       end)
 
     if merged? do
@@ -192,6 +188,12 @@ defmodule Phx.Live.Head do
 
   # query does not match query of last set of changes
   defp push_or_merge_head_change(rest, query, change), do: new_bucket(query, rest, change)
+
+  defp event_reducer(["hd", %{c: changes}], _merged?, query, change),
+    do: {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
+
+  defp event_reducer(event, merged?, _query, _change),
+    do: {event, merged?}
 
   # Phoenix LiveView < 0.19
   defp put_event(socket, events) when is_map_key(socket.private, :__changed__),
