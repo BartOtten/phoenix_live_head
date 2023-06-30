@@ -152,19 +152,12 @@ defmodule Phx.Live.Head do
     {events, merged?} =
       socket
       |> Utils.get_push_events()
-      |> Enum.map_reduce(false, fn
-        ["hd", %{c: changes}], _ ->
-          {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
-
-        other, merged? ->
-          {other, merged?}
+      |> Enum.map_reduce(false, fn changes, merged? ->
+        event_reducer(changes, merged?, query, change)
       end)
 
-    #  we either simply push a new event to the stack when their were no merged
-    #  head events or we replace the whole list of events with our mapped variant
-    #  including merged head events
     if merged? do
-      put_in(socket.private.__changed__.push_events, events)
+      put_event(socket, events)
     else
       push_event(socket, "hd", %{c: [[query, [change]]]})
     end
@@ -195,6 +188,20 @@ defmodule Phx.Live.Head do
 
   # query does not match query of last set of changes
   defp push_or_merge_head_change(rest, query, change), do: new_bucket(query, rest, change)
+
+  defp event_reducer(["hd", %{c: changes}], _merged?, query, change),
+    do: {["hd", %{c: push_or_merge_head_change(changes, query, change)}], true}
+
+  defp event_reducer(event, merged?, _query, _change),
+    do: {event, merged?}
+
+  # Phoenix LiveView < 0.19
+  defp put_event(socket, events) when is_map_key(socket.private, :__changed__),
+    do: put_in(socket.private.__changed__.push_events, events)
+
+  # Phoenix LiveView >= 0.19
+  defp put_event(socket, events) when is_map_key(socket.private, :__temp__),
+    do: put_in(socket.private.__temp__.push_events, events)
 
   defp split_and_override_attr(changes, attr, splitters) do
     {overridable, to_keep} =
