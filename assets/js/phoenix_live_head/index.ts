@@ -168,14 +168,6 @@ module PhxLiveHead {
         applyToElement(tel, changes)
       })
     }
-
-    // force a redraw as sometimes changes are not detected properly
-    const element = document.querySelector('head');
-    if (element ) {
-      const clone = element.cloneNode(true);
-      element.replaceWith(clone);
-    }
-
   }
 }
 
