@@ -1,4 +1,12 @@
 # Changelog
+
+## v0.2.1
+This release has been made possible by @dfalling; not only reporting 
+issues but also fixing them. Thanks!
+
+* fix: update private changed for liveview 0.19.0
+* fix: do not force redraw as it causes flickers (#10)
+
 ## v0.2.0
 ### Features
 #### Create and restore snapshots
