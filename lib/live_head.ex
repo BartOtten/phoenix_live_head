@@ -203,6 +203,10 @@ defmodule Phx.Live.Head do
   defp put_event(socket, events) when is_map_key(socket.private, :__temp__),
     do: put_in(socket.private.__temp__.push_events, events)
 
+  # Phoenix LiveView >= 0.20.1
+  defp put_event(socket, events) when is_map_key(socket.private, :live_temp),
+    do: put_in(socket.private.live_temp.push_events, events)
+
   defp split_and_override_attr(changes, attr, splitters) do
     {overridable, to_keep} =
       Enum.split_while(changes, fn [action, _a, _v] -> action not in splitters end)
