@@ -32,3 +32,5 @@ phoenix_live_head-*.tar
 pasteboard
 
 /priv
+
+.elixir-tools
