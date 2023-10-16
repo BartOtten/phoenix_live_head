@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.2
+This release has been made possible by @dfalling; again not only reporting 
+the issue but also fixing it.
+
+* fix: add new put_event for liveview 0.20 (#12)
+
 ## v0.2.1
 This release has been made possible by @dfalling; not only reporting 
 issues but also fixing them. Thanks!
