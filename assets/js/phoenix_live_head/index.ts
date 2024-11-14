@@ -1,12 +1,12 @@
 module PhxLiveHead {
   // TYPES
-  type action = "s" | "a" | "x" |"b" |"r" | "t" | "i" | "d";
+  type action = "s" | "a" | "x" | "b" | "r" | "t" | "i" | "d";
   type attr = string;
   type value = string;
   type query = string;
   type change = [action, attr, value]
-  type detail = {"c": [[query, change[]]]}
-  type state = { [key: attr]: string | null}
+  type detail = { "c": [[query, change[]]] }
+  type state = { [key: attr]: string | null }
 
   // CONSTANTS
   export const NAMESPACE: string = 'plh';
@@ -19,28 +19,28 @@ module PhxLiveHead {
   function camelToKebabCase(s: string): string { return s.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase(); }
   function stateKey(key: string, el: HTMLElement): string { return `${NAMESPACE}:${el.dataset['id']}-${key}`; }
   function randId(): string {
-  return Math.floor((1 + Math.random()) * 0x10000)
+    return Math.floor((1 + Math.random()) * 0x10000)
       .toString(16)
       .substring(1);
-}
+  }
   function attrObject(el: HTMLElement): state {
     return Array.from(el.attributes)
       .filter(a => a.specified)
-      .map(a => ({[a.nodeName]: a.nodeValue}))
+      .map(a => ({ [a.nodeName]: a.nodeValue }))
       .reduce((prev, curr) => Object.assign(prev || {}, curr))
   }
 
   function isStateBackupped(el: HTMLElement, attr: string, key: string): boolean {
     const saved = getState(el, key)
-    if(saved !== undefined && attr === ALL_ATTR){ return true}
-    if(saved !== undefined && attr !== ALL_ATTR){ return saved[attr] !== undefined }
+    if (saved !== undefined && attr === ALL_ATTR) { return true }
+    if (saved !== undefined && attr !== ALL_ATTR) { return saved[attr] !== undefined }
 
     return false
   }
 
   function getState(el: HTMLElement, key: string): state | undefined {
     const value = sessionStorage.getItem(stateKey(key, el)) || null
-    return value !== (undefined  || null) ? JSON.parse(value) : undefined
+    return value !== (undefined || null) ? JSON.parse(value) : undefined
   }
 
   function saveState(el: HTMLElement, key: string, value: object): void {
@@ -51,7 +51,7 @@ module PhxLiveHead {
   function backupState(el: HTMLElement, attr: string, key: string): void {
     const attrs = attrObject(el)
 
-    if(attr !== ALL_ATTR){ return saveState(el, key, {[attr]: attrs[attr]}); }
+    if (attr !== ALL_ATTR) { return saveState(el, key, { [attr]: attrs[attr] }); }
 
     saveState(el, key, attrs);
   }
@@ -59,20 +59,21 @@ module PhxLiveHead {
   function restoreState(el: HTMLElement, attr: string, key: string): void {
     const state = getState(el, key)
 
-    if(state === undefined) {
+    if (state === undefined) {
       console.warn(`No state backup found for key ${stateKey(key, el)}`)
     } else {
-      if(attr !== ALL_ATTR){ return restoreAttrState(el, attr, key) }
+      if (attr !== ALL_ATTR) { return restoreAttrState(el, attr, key) }
 
-      for(const attr of Object.keys(state)) {
+      for (const attr of Object.keys(state)) {
         restoreAttrState(el, attr, key)
-      }}
+      }
+    }
   }
 
   function restoreAttrState(el: HTMLElement, attr: attr, key: string): void {
     const state = getState(el, key)
 
-    if(state === undefined) {
+    if (state === undefined) {
       console.warn(`No state backup found for key ${stateKey(key, el)}`)
     } else {
       const value = state[attr]
@@ -83,11 +84,11 @@ module PhxLiveHead {
     }
   }
 
-  function setDynamicAttributes(el: HTMLElement, replacements: {[key: string]: string}){
-    for(const [dynKey, dynTempl] of Object.entries(el.dataset).filter(([key, _]) => key.startsWith('dynamic'))) {
+  function setDynamicAttributes(el: HTMLElement, replacements: { [key: string]: string }) {
+    for (const [dynKey, dynTempl] of Object.entries(el.dataset).filter(([key, _]) => key.startsWith('dynamic'))) {
       const attr = camelToKebabCase(dynKey.substring("dynamic".length))
-      if(dynTempl === undefined){return;}
-      if(Object.keys(replacements).some(replacement => dynTempl?.includes(`{${replacement}}`))){
+      if (dynTempl === undefined) { return; }
+      if (Object.keys(replacements).some(replacement => dynTempl?.includes(`{${replacement}}`))) {
         const newValue: string = dynTempl?.replace(
           /{(\w+)}/g,
           (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
@@ -107,10 +108,22 @@ module PhxLiveHead {
       const [action, attr_input, value] = change;
       const attr = ATTR[attr_input] || attr_input
 
+      // If the passed attribute is 'textContent', we're targeting the element's
+      // property
+      // if the action is "s", set the property, if "a", append to it
+      if (attr === "t") {
+        switch (action) {
+          case "s": el["textContent"] = value; break;
+          case "a": el["textContent"] += value; break;
+          default: null
+        }
+        return;
+      }
+
       // we collect all replacements so we can set them all at once
       // as there might be multiple in a single attribute
       if (action === "d") {
-        replacements = {[attr]: value, ...replacements};
+        replacements = { [attr]: value, ...replacements };
         sessionStorage.setItem(stateKey('dyn-' + attr, el), value);
         return;
         // the replacement takes place before any other action
@@ -146,7 +159,7 @@ module PhxLiveHead {
     // execute remaining replacements when there was no
     // subsequent action
     if (Object.keys(replacements).length > 0) {
-        setDynamicAttributes(el, replacements);
+      setDynamicAttributes(el, replacements);
     }
 
   };
@@ -162,7 +175,7 @@ module PhxLiveHead {
 
       elements.forEach(el => {
         const tel = el as HTMLElement;
-        if(!tel.dataset['id']){tel.dataset['id'] = randId()}
+        if (!tel.dataset['id']) { tel.dataset['id'] = randId() }
         if (!isStateBackupped(tel, ALL_ATTR, 'orig')) { backupState(tel, ALL_ATTR, 'orig') }
 
         applyToElement(tel, changes)
