@@ -9,7 +9,7 @@ on:
 env:
   MIX_ENV: test
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+
 permissions:
   contents: write
 
@@ -20,7 +20,7 @@ jobs:
       matrix:
         elixir: [1.13.4, 1.14.2]
         otp: [24.3.4, 25.2.0]
-        
+
     name: Build and test
     steps:
     - uses: actions/checkout@v3
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Publish to Pages
