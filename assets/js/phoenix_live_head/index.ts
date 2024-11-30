@@ -131,7 +131,19 @@ module PhxLiveHead {
 
     changes.forEach(function (change: change) {
       const [action, attr_input, value] = change;
-      const attr = ATTR[attr_input] || attr_input;
+      const attr = ATTR[attr_input] || attr_input
+
+      // If the passed attribute is 'textContent', we're targeting the element's
+      // property
+      // if the action is "s", set the property, if "a", append to it
+      if (attr === "t") {
+        switch (action) {
+          case "s": el["textContent"] = value; break;
+          case "a": el["textContent"] += value; break;
+          default: null
+        }
+        return;
+      };
 
       // we collect all replacements so we can set them all at once
       // as there might be multiple in a single attribute
