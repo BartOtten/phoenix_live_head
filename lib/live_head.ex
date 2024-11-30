@@ -125,7 +125,29 @@ defmodule Phx.Live.Head do
     push_or_merge_head_event(socket, query, [action, attr, value])
   end
 
+  @doc """
+  Pushes `action` to apply on `textContent` property of elements matching `query`.
+
+  ## Comments
+
+  Why `textContent` and not `innerHTML`? As per MDN web docs,
+  [Node: textContent property](https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent),
+
+  "...there is still a security risk whenever you use innerHTML to set strings
+  over which you have no control. ... For that reason, it is recommended that
+  instead of innerHTML you use ...  `Node.textContent` when inserting plain
+  text, as this inserts it as raw text rather than parsing it as HTML."
+  """
+  @spec push_content(socket :: Socket.t(), query, action, value) :: Socket.t()
+  def push_content(socket, query, action, value)
+      when action == :add or action == :set do
+        push(socket, query, action, "textContent", value)
+  end
+
+  def push_content(socket, _query, _action, _value), do: socket
+
   @spec maybe_min_attr(attr) :: String.t()
+  defp maybe_min_attr("textContent"), do: "t"
   defp maybe_min_attr("class"), do: "c"
   defp maybe_min_attr("class-name"), do: "c"
   defp maybe_min_attr("href"), do: "h"
