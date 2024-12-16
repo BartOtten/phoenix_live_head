@@ -1,13 +1,17 @@
 # Changelog
 
+## v0.3
+ * feat: new function push_content; making a call to update the textContent
+   property and not an attribute. (#16). Contributed by @sachamasry
+
 ## v0.2.2
-This release has been made possible by @dfalling; again not only reporting 
+This release has been made possible by @dfalling; again not only reporting
 the issue but also fixing it.
 
 * fix: add new put_event for liveview 0.20 (#12)
 
 ## v0.2.1
-This release has been made possible by @dfalling; not only reporting 
+This release has been made possible by @dfalling; not only reporting
 issues but also fixing them. Thanks!
 
 * fix: update private changed for liveview 0.19.0

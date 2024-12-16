@@ -141,7 +141,7 @@ defmodule Phx.Live.Head do
   @spec push_content(socket :: Socket.t(), query, action, value) :: Socket.t()
   def push_content(socket, query, action, value)
       when action == :add or action == :set do
-        push(socket, query, action, "textContent", value)
+    push(socket, query, action, "textContent", value)
   end
 
   def push_content(socket, _query, _action, _value), do: socket
