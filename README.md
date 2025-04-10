@@ -19,8 +19,14 @@
   > High-level libs provide a cleaner syntax and specific documentation
   > for their intended usage.
 
+
+## Status
+Although updates may appear infrequent, the repository remains solid and fully operational.
+
+
 ## Documentation
 Documentation can be found at [HexDocs](https://hexdocs.pm/phoenix_live_head).
+
 
 ## Support, Feature Requests and Contributing
 See [CONTRIBUTING](CONTRIBUTING.md)
@@ -49,6 +55,7 @@ import { LiveSocket } from "../vendor/phoenix_live_view/"
 import topbar from "../vendor/topbar"
 import "phoenix_live_head" // <-- ADD HERE.
 ```
+
 
 ## Development
 
