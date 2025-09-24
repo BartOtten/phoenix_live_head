@@ -40,7 +40,7 @@ dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:phoenix_live_head, "~> 0.2.0"}
+    {:phoenix_live_head, "~> 1.0.0"}
   ]
 end
 ```
